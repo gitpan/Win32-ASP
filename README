@@ -1,7 +1,7 @@
 NAME
     Win32::ASP - a Module for ASP (PerlScript) Programming
 
-Synopsis
+SYNOPSIS
             use Win32::ASP;
 
             print "This is a test<BR><BR>";
@@ -14,7 +14,7 @@ Synopsis
             print "You selected the ", $PageName, " page";
             exit;
 
-Description
+DESCRIPTION
     These routines are some I knocked together one day when I was
     saying the following: "Why don't my "print" statements output to
     the browser?" and "Why doesn't exit and die end my script?". So
@@ -33,186 +33,182 @@ Description
 
   Installation instructions
 
-    Download the file. If you get it from my geocities web site you
-    will have to rename it (they don't like .pm extensions). Make
-    sure the file is called ASP.pm
+    This now installs with MakeMaker, or I often have a ppd package
+    available at http://www.fastnetltd.ndirect.co.uk/Perl/zips
 
-    Now move the file into the perl\site\<version>\lib\win32
-    directory (where <version> is your perl version).
+    To install the ppd, extract the zip file somewhere, and in a dos
+    box cd to that directory and type "ppm install Win32-ASP.ppd".
 
-    That's it - you're ready to start PerlScripting with ease.
+    To install via MakeMaker, it's the usual procedure - download
+    from CPAN, extract, type "perl Makefile.PL", "nmake" then "nmake
+    install". Don't do an "nmake test" because the ASP objects won't
+    be available and so won't work properly.
 
 Function Reference
-    use Win32::ASP qw(:strict);
-        This allows you to use the ASP module in a "strict" perl
-        script. Normally under "use strict" PerlScript would
-        complain that the ASP objects ($Response, $Session etc) were
-        not initialised: "Global symbol "Response" requires explicit
-        package name at - line XXX".
+  use Win32::ASP qw(:strict);
 
-        To get around this I simply assign and assign back the
-        variables, and export them into the main namespace.
+    This allows you to use the ASP module in a "strict" perl script.
+    Normally under "use strict" PerlScript would complain that the
+    ASP objects ($Response, $Session etc) were not initialised:
+    "Global symbol "Response" requires explicit package name at -
+    line XXX".
 
-        Note: In order to use this feature you may have to make
-        changes to the registry. This is at your own risk. If your
-        computer stops working after you make these changes I am not
-        responsible. I have made the changes myself and they appear
-        to work, but please be careful.
+    To get around this I simply assign and assign back the
+    variables, and export them into the main namespace.
 
-        Change the following keys:
+    Note - you don't _have_ to do this. The symbols for Session,
+    Response etc are in the global symbol table and so are
+    accessible if you do "use vars qw/$Session $Response/;".
 
-                HKEY_LOCAL_MACHINE\
-                  SYSTEM\
-                    CurrentControlSet\
-                      Services\
-                        W3SVC\
-                          ASP\
-                            LanguageEngines\
-                              PerlScript
+  Print LIST
 
-                Write = "$main::Response->write(|);"
-                WriteBlock = "$main::Response->writeblock(|);"
+    Prints a string or comma separated list of strings to the
+    browser. Use as if you were using print in a CGI application.
+    Print gets around ASP's limitations of 128k in a single
+    Response->Write call.
 
-        The change should be just to add the "main::" after the "$"
-        and before "Response".
+    Obsolete - use `print' instead.
 
-    Print LIST
-        Prints a string or comma separated list of strings to the
-        browser. Use as if you were using print in a CGI
-        application. Print gets around ASP's limitations of 128k in
-        a single Response->Write call.
+    NB: `print' calls Print, so you could use either, but print is
+    more integrated with "the perl way".
 
-        Obsolete - use `print' instead.
+  DebugPrint LIST
 
-        NB: `print' calls Print, so you could use either, but print
-        is more integrated with "the perl way".
+    The same as `Print' except the output is between HTML comments
+    so that you can only see it with "view source". DebugPrint is
+    not exported so you have to use it as Win32::ASP::DebugPrint()
 
-    DebugPrint LIST
-        The same as `Print' except the output is between HTML
-        comments so that you can only see it with "view source".
-        DebugPrint is not exported so you have to use it as
-        Win32::ASP::DebugPrint()
+    This function is useful to debug your application. For example I
+    use it to print out SQL before it is executed.
 
-        This function is useful to debug your application. For
-        example I use it to print out SQL before it is executed.
+  HTMLPrint LIST
 
-    HTMLPrint LIST
-        The same as `Print' except the output is taken and encoded
-        so that any html tags appear as sent, i.e. < becomes &lt;, >
-        becomes &gt; etc. HTMLPrint is not exported, so use it like
-        Win32::ASP::HTMLPrint.
+    The same as `Print' except the output is taken and encoded so
+    that any html tags appear as sent, i.e. < becomes &lt;, >
+    becomes &gt; etc. HTMLPrint is not exported, so use it like
+    Win32::ASP::HTMLPrint.
 
-        This function is useful for printing output that comes from
-        a database or a file, where you don't have total control
-        over the input.
+    This function is useful for printing output that comes from a
+    database or a file, where you don't have total control over the
+    input.
 
-    wprint LIST
-        Obsolete: Use `Print' instead
+  wprint LIST
 
-    die LIST
-        Prints the contents of LIST to the browser and then exits.
-        `die' automatically calls $Response->End for you, it also
-        executes any cleanup code you have added with
-        `AddDeathHook'.
+    Obsolete: Use `Print' instead
 
-    exit
-        Exits the current script. $Response->End is called
-        automatically for you, and any cleanup code added with
-        `AddDeathHook' is also called.
+  die LIST
 
-    HTMLEncode LIST
-        The same as HTMLPrint except the output is not printed but
-        returned as a scalar instead. HTMLEncode is not exported, so
-        use it like Win32::ASP::HTMLEncode.
+    Prints the contents of LIST to the browser and then exits. `die'
+    automatically calls $Response->End for you, it also executes any
+    cleanup code you have added with `AddDeathHook'.
 
-        This function is useful to handle output that comes from a
-        database or a file, where you don't have total control over
-        the input.
+  exit
 
-        If an array ref is passed it uses the ref, otherwise it
-        assumes an array of scalars is used. Using a ref makes for
-        less time spent passing values back and forth, and is the
-        prefered method.
+    Exits the current script. $Response->End is called automatically
+    for you, and any cleanup code added with `AddDeathHook' is also
+    called.
 
-    GetFormValue EXPR [, EXPR]
-        returns the value passed from a form (or non-form GET
-        request). Use this method if you want to be able to develop
-        in GET mode (for ease of debugging) and move to POST mode
-        for release. The second (optional) parameter is for getting
-        multiple parameters as in:
+  HTMLEncode LIST
 
-                http://localhost/scripts/test.asp?Q=a&Q=b
+    The same as HTMLPrint except the output is not printed but
+    returned as a scalar instead. HTMLEncode is not exported, so use
+    it like Win32::ASP::HTMLEncode.
 
-        In the above GetFormValue("Q", 1) returns "a" and
-        GetFormValue("Q", 2) returns "b".
+    This function is useful to handle output that comes from a
+    database or a file, where you don't have total control over the
+    input.
 
-        GetFormValue will work in an array context too, returning
-        all the values for a particular parameter. For example with
-        the above url:
+    If an array ref is passed it uses the ref, otherwise it assumes
+    an array of scalars is used. Using a ref makes for less time
+    spent passing values back and forth, and is the prefered method.
 
-                my @AllQs = GetFormValue('Q');
+  GetFormValue EXPR [, EXPR]
 
-        will return an array: @AllQs = ['a', 'b']
+    returns the value passed from a form (or non-form GET request).
+    Use this method if you want to be able to develop in GET mode
+    (for ease of debugging) and move to POST mode for release. The
+    second (optional) parameter is for getting multiple parameters
+    as in:
 
-    GetFormCount EXPR
-        returns the number of times EXPR appears in the request
-        (Form or QueryString). Use this value as $i to iterate over
-        GetFormValue(EXPR, $i).
+            http://localhost/scripts/test.asp?Q=a&Q=b
 
-        For example, url is:
+    In the above GetFormValue("Q", 1) returns "a" and
+    GetFormValue("Q", 2) returns "b".
 
-                http://localhost/scripts/myscript.asp?Q=a&Q=b
+    GetFormValue will work in an array context too, returning all
+    the values for a particular parameter. For example with the
+    above url:
 
-        And code is:
+            my @AllQs = GetFormValue('Q');
 
-                my $numQs = GetFormCount('Q');
+    will return an array: @AllQs = ['a', 'b']
 
-        gives $numQs = 2
+  GetFormCount EXPR
 
-    AddDeathHook LIST
-        This frightening sounding function allows you to have
-        cleanup code executed when you `die' or `exit'. For example
-        you may want to disconnect from your database if there is a
-        problem:
+    returns the number of times EXPR appears in the request (Form or
+    QueryString). Use this value as $i to iterate over
+    GetFormValue(EXPR, $i).
 
-                <%
-                        my $Conn = $Server->CreateObject('ADODB.Connection');
-                        $Conn->Open( "DSN=BADEV1;UID=sa;DATABASE=ProjAlloc" );
-                        $Conn->BeginTrans();
+    For example, url is:
 
-                        Win32::ASP::AddDeathHook( sub { $Conn->Close if $Conn; } );
-                %>
+            http://localhost/scripts/myscript.asp?Q=a&Q=b
 
-        Now when you `die' because of an error, your database
-        connection will close gracefully, instead of you having
-        loads of rogue connections that you have to kill by hand, or
-        restart your database once a day.
+    And code is:
 
-        Death hooks should be executed on a graceful exit of the
-        script too, but I've been unable to confirm this. If anyone
-        has any luck, let me know.
+            my $numQs = GetFormCount('Q');
 
-    BinaryWrite LIST
-        Performs the same function as `$Response-'>`BinaryWrite()'
-        but gets around Perl's lack of unicode support, and the null
-        padding it uses to get around this.
+    gives $numQs = 2
 
-        Example:
+  AddDeathHook LIST
 
-                Win32::ASP::BinaryWrite($val);
+    This frightening sounding function allows you to have cleanup
+    code executed when you `die' or `exit'. For example you may want
+    to disconnect from your database if there is a problem:
 
-    SetCookie Name, Value [, HASH]
-        Sets the cookie Name with the value Value. HASH is option,
-        and contains any of the following optional parameters:
+            <%
+                    my $Conn = $Server->CreateObject('ADODB.Connection');
+                    $Conn->Open( "DSN=BADEV1;UID=sa;DATABASE=ProjAlloc" );
+                    $Conn->BeginTrans();
+
+                    Win32::ASP::AddDeathHook( sub { $Conn->Close if $Conn; } );
+            %>
+
+    Now when you `die' because of an error, your database connection
+    will close gracefully, instead of you having loads of rogue
+    connections that you have to kill by hand, or restart your
+    database once a day.
+
+    Death hooks should be executed on a graceful exit of the script
+    too, but I've been unable to confirm this. If anyone has any
+    luck, let me know.
+
+  BinaryWrite LIST
+
+    Performs the same function as `$Response-'>`BinaryWrite()' but
+    gets around Perl's lack of unicode support, and the null padding
+    it uses to get around this.
+
+    Example:
+
+            Win32::ASP::BinaryWrite($val);
+
+  SetCookie Name, Value [, HASH]
+
+    Sets the cookie Name with the value Value. HASH is option, and
+    contains any of the following optional parameters:
 
     * -expires => A CGI.pm style expires value (see the CGI.pm docs for header() for this).
     * -domain => a domain in the style ".matt.com" that the cookie is returned to.
     * -path => a path that the cookie is returned to.
     * -secure => cookie only gets returned under SSL if this is true.
-        Example:
+    If Value is a hash ref, then it creates a cookie dictionary.
+    (see either the ASP docs, or my Introduction to PerlScript for
+    more info on Cookie Dictionaries).
 
-                Win32::ASP::SetCookie("Matt", "Sergeant", ( -expires => "+3h",
-                        -domain => ".matt.com",
-                        -path => "/users/matt",
-                        -secure => 0 ));
+    Example:
+
+            Win32::ASP::SetCookie("Matt", "Sergeant", ( -expires => "+3h",
+                    -domain => ".matt.com",
+                    -path => "/users/matt",
+                    -secure => 0 ));
 

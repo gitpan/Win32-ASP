@@ -3,9 +3,8 @@
 # Win32::ASP - a Module for ASP (PerlScript) Programming
 #
 # Author: Matt Sergeant
-# Revision: 2.0
-# Last Change: Made Autoload to speed things up, because of this
-#              significant change I bumped the major revision up.
+# Revision: 2.01
+# Last Change: Fixed install docs, fixed DeathHooks
 #####################################################################
 # Copyright 1998 Matt Sergeant.  All rights reserved.
 #
@@ -96,12 +95,19 @@ BEGIN {
 
 }
 
-$VERSION='2.0';
+$VERSION='2.01';
 
 my $SH = tie *RESPONSE_FH, 'Win32::ASP::IO';
 select RESPONSE_FH;
 
 # Preloaded methods go here.
+
+sub _END {
+	my $func;
+	foreach $func (@DeathHooks) {
+		&$func();
+	}
+}
 
 # Autoload methods go after =cut, and are processed by the autosplit program.
 
@@ -144,20 +150,20 @@ how the ASP code handles the different formats, GetFormValue solves that one.
 
 =head2 Installation instructions
 
-Download the file. If you get it from my geocities web site you will have
-to rename it (they don't like .pm extensions). Make sure the file is called
-ASP.pm
+This now installs with MakeMaker, or I often have a ppd package available
+at http://www.fastnetltd.ndirect.co.uk/Perl/zips
 
-Now move the file into the perl\site\<version>\lib\win32 directory (where
-<version> is your perl version).
+To install the ppd, extract the zip file somewhere, and in a dos box cd to
+that directory and type "ppm install Win32-ASP.ppd".
 
-That's it - you're ready to start PerlScripting with ease.
+To install via MakeMaker, it's the usual procedure - download from CPAN,
+extract, type "perl Makefile.PL", "nmake" then "nmake install". Don't
+do an "nmake test" because the ASP objects won't be available and so won't
+work properly.
 
 =head1 Function Reference
 
-=over 4
-
-=item use Win32::ASP qw(:strict);
+=head2 use Win32::ASP qw(:strict);
 
 This allows you to use the ASP module in a "strict" perl script. Normally under "use strict"
 PerlScript would complain that the ASP objects ($Response, $Session etc) were not
@@ -166,28 +172,10 @@ initialised: "Global symbol "Response" requires explicit package name at - line 
 To get around this I simply assign and assign back the variables, and export them into
 the main namespace.
 
-Note: In order to use this feature you may have to make changes to the registry.
-This is at your own risk. If your computer stops working after you make these
-changes I am not responsible. I have made the changes myself and they appear to
-work, but please be careful.
+Note - you don't _have_ to do this. The symbols for Session, Response etc are in the global
+symbol table and so are accessible if you do "use vars qw/$Session $Response/;".
 
-Change the following keys:
-
-	HKEY_LOCAL_MACHINE\
-	  SYSTEM\
-	    CurrentControlSet\
-	      Services\
-	        W3SVC\
-	          ASP\
-	            LanguageEngines\
-	              PerlScript
-
-	Write = "$main::Response->write(|);"
-	WriteBlock = "$main::Response->writeblock(|);"
-
-The change should be just to add the "main::" after the "$" and before "Response".
-
-=item Print LIST
+=head2 Print LIST
 
 Prints a string or comma separated list of strings to the browser. Use
 as if you were using print in a CGI application. Print gets around ASP's
@@ -209,7 +197,7 @@ sub Print(@) {
 	}
 }
 
-=item DebugPrint LIST
+=head2 DebugPrint LIST
 
 The same as C<Print> except the output is between HTML comments
 so that you can only see it with "view source". DebugPrint is
@@ -225,7 +213,7 @@ sub DebugPrint (@) {
 	Print " -->\n";
 }
 
-=item HTMLPrint LIST
+=head2 HTMLPrint LIST
 
 The same as C<Print> except the output is taken and encoded so that
 any html tags appear as sent, i.e. < becomes &lt;, > becomes &gt; etc.
@@ -242,7 +230,7 @@ sub HTMLPrint (@) {
 	}
 }
 
-=item wprint LIST
+=head2 wprint LIST
 
 Obsolete: Use C<Print> instead
 
@@ -251,7 +239,7 @@ sub wprint (@) {
 	Print @_;
 }
 
-=item die LIST
+=head2 die LIST
 
 Prints the contents of LIST to the browser and then exits. C<die> automatically
 calls $Response->End for you, it also executes any cleanup code you have
@@ -261,24 +249,24 @@ added with C<AddDeathHook>.
 sub die (@) {
 	Print @_;
 	Print "</BODY></HTML>";
-	END;
+	_END;
 	$main::Response->End();
 	CORE::die();
 }
 
-=item exit
+=head2 exit
 
 Exits the current script. $Response->End is called automatically for you, and
 any cleanup code added with C<AddDeathHook> is also called.
 
 =cut
 sub exit (;$) {
-	END;
+	_END;
 	$main::Response->End();
 	CORE::exit();
 }
 
-=item HTMLEncode LIST
+=head2 HTMLEncode LIST
 
 The same as HTMLPrint except the output is not printed but returned
 as a scalar instead.
@@ -305,7 +293,7 @@ sub HTMLEncode (@) {
 	return $ref ? \@encodedHTML : @encodedHTML;
 }
 
-=item GetFormValue EXPR [, EXPR]
+=head2 GetFormValue EXPR [, EXPR]
 
 returns the value passed from a form (or non-form GET request). Use this
 method if you want to be able to develop in GET mode (for ease of debugging)
@@ -353,7 +341,7 @@ sub GetFormValue ($;$) {
 	}
 }
 
-=item GetFormCount EXPR
+=head2 GetFormCount EXPR
 
 returns the number of times EXPR appears in the request (Form or QueryString).
 Use this value as $i to iterate over GetFormValue(EXPR, $i).
@@ -378,7 +366,7 @@ sub GetFormCount ($) {
 	}
 }
 
-=item AddDeathHook LIST
+=head2 AddDeathHook LIST
 
 This frightening sounding function allows you to have cleanup code
 executed when you C<die> or C<exit>. For example you may want to
@@ -405,6 +393,8 @@ sub AddDeathHook (@) {
 	push @DeathHooks, @_;
 }
 
+# The following doesn't appear to work, but it's left in for further investigation.
+
 END {
 	my $func;
 	foreach $func (@DeathHooks) {
@@ -412,7 +402,7 @@ END {
 	}
 }
 
-=item BinaryWrite LIST
+=head2 BinaryWrite LIST
 
 Performs the same function as C<$Response->E<gt>C<BinaryWrite()> but gets around
 Perl's lack of unicode support, and the null padding it uses to get around
@@ -489,7 +479,7 @@ sub date {
                    $WDAY[$wday],$mday,$MON[$mon],$year,$hour,$min,$sec);
 }
 
-=item SetCookie Name, Value [, HASH]
+=head2 SetCookie Name, Value [, HASH]
 
 Sets the cookie Name with the value Value. HASH is option, and contains any of
 the following optional parameters:
@@ -506,6 +496,10 @@ the following optional parameters:
 
 =back
 
+If Value is a hash ref, then it creates a cookie dictionary. (see either
+the ASP docs, or my Introduction to PerlScript for more info on Cookie
+Dictionaries).
+
 Example:
 
 	Win32::ASP::SetCookie("Matt", "Sergeant", ( -expires => "+3h",
@@ -517,10 +511,10 @@ Example:
 
 sub SetCookie ($$;%) {
 	my ($name, $value, %hash) = @_;
+	$value = join("&", map {$main::Server->URLEncode($_) . "=" . $main::Server->URLEncode($$value{$_})} keys(%$value)) if (ref($value) eq 'HASH');
 	$main::Response->AddHeader('Set-Cookie', "$name=$value" .
 		($hash{-path} ? "; path=" . $hash{-path} : "") .
 		($hash{-domain} ? "; domain=" . $hash{-domain} : "") .
 		($hash{-secure} ? "; secure" : "") .
 		($hash{-expires} ? "; expires=" . &date(&expire_calc($hash{-expires})) : "") );
 }
-
