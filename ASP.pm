@@ -3,8 +3,9 @@
 # Win32::ASP - a Module for ASP (PerlScript) Programming
 #
 # Author: Matt Sergeant
-# Revision: 1.11
-# Last Change: Added HTMLEncode from Jeroen Kustermans
+# Revision: 2.0
+# Last Change: Made Autoload to speed things up, because of this
+#              significant change I bumped the major revision up.
 #####################################################################
 # Copyright 1998 Matt Sergeant.  All rights reserved.
 #
@@ -12,67 +13,39 @@
 # http://www.ActiveState.com/corporate/artistic_license.htm or
 # the license that comes with your perl distribution.
 #
-# The most up to date version of this script should always be available
-# at http://come.to/fastnet
-#
 # For comments, questions, bugs or general interest, feel free to
 # contact me at msergeant@ndirect.co.uk
 #####################################################################
-
-package Win32::ASP;
 use strict;
 
-=head1 NAME
+# print overloading
 
-Win32::ASP - a Module for ASP (PerlScript) Programming
+package Win32::ASP::IO;
 
-=head1 Synopsis
+sub new {
+    my $self = bless {}, shift;
+    $self;
+}
 
-	use Win32::ASP;
+sub print {
+    my $self = shift;
+    Win32::ASP::Print(@_);
+    1;
+}
 
-	print "This is a test<BR><BR>";
+sub TIEHANDLE { shift->new(@_) }
+sub PRINT     { shift->print(@_) }
+sub PRINTF    { shift->print(sprintf(@_)) }
 
-	$PageName = GetFormValue('PageName');
-	if($PageName eq 'Select a page...') {
-		die "Please go back and select a value from the Pages list";
-	}
+1;
 
-	print "You selected the ", $PageName, " page";
-	exit;
-
-=head1 Description
-
-These routines are some I knocked together one day when I was saying the
-following: "Why don't my "print" statements output to the browser?" and
-"Why doesn't exit and die end my script?". So I started investigating how
-I could overload the core functions. "print" is overloaded via the tie
-mechanism (thanks to Eryq (F<eryq@zeegee.com>), Zero G Inc. for the
-code which I ripped from IO::Scalar). You can also get at print using the
-OO mechanism with $Win32::ASP::SH->print(). Also added recently was code
-that allowed cleanup stuff to be executed when you exit() or die(), this
-comes in the form of the C<AddDeathHook> function. The C<BinaryWrite> function
-simply wraps up unicode conversion and BinaryWrite in one call. Finally I
-was annoyed that I couldn't just develop a script
-using GET and then change to POST for release because of the difference in
-how the ASP code handles the different formats, GetFormValue solves that one.
-
-=head2 Installation instructions
-
-Download the file. If you get it from my geocities web site you will have
-to rename it (they don't like .pm extensions). Make sure the file is called
-ASP.pm
-
-Now move the file into the perl\site\<version>\lib\win32 directory (where
-<version> is your perl version).
-
-That's it - you're ready to start PerlScripting with ease.
-
-=head1 Function Reference
-
-=cut
+package Win32::ASP;
+use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
 BEGIN {
-	use Exporter ();
+	require Exporter;
+	require AutoLoader;
+
 	use vars		qw( @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS
 						$Application
 						$ObjectContext
@@ -83,7 +56,7 @@ BEGIN {
 						@DeathHooks
 						);
 
-	@ISA		=	qw(Exporter);
+	@ISA = qw(Exporter AutoLoader);
 	@EXPORT		=	qw(	Print
 						wprint
 						die
@@ -123,10 +96,64 @@ BEGIN {
 
 }
 
-$Win32::ASP::VERSION='1.11';
+$VERSION='2.0';
 
 my $SH = tie *RESPONSE_FH, 'Win32::ASP::IO';
 select RESPONSE_FH;
+
+# Preloaded methods go here.
+
+# Autoload methods go after =cut, and are processed by the autosplit program.
+
+1;
+__END__
+
+=head1 NAME
+
+Win32::ASP - a Module for ASP (PerlScript) Programming
+
+=head1 SYNOPSIS
+
+	use Win32::ASP;
+
+	print "This is a test<BR><BR>";
+
+	$PageName = GetFormValue('PageName');
+	if($PageName eq 'Select a page...') {
+		die "Please go back and select a value from the Pages list";
+	}
+
+	print "You selected the ", $PageName, " page";
+	exit;
+
+=head1 DESCRIPTION
+
+These routines are some I knocked together one day when I was saying the
+following: "Why don't my "print" statements output to the browser?" and
+"Why doesn't exit and die end my script?". So I started investigating how
+I could overload the core functions. "print" is overloaded via the tie
+mechanism (thanks to Eryq (F<eryq@zeegee.com>), Zero G Inc. for the
+code which I ripped from IO::Scalar). You can also get at print using the
+OO mechanism with $Win32::ASP::SH->print(). Also added recently was code
+that allowed cleanup stuff to be executed when you exit() or die(), this
+comes in the form of the C<AddDeathHook> function. The C<BinaryWrite> function
+simply wraps up unicode conversion and BinaryWrite in one call. Finally I
+was annoyed that I couldn't just develop a script
+using GET and then change to POST for release because of the difference in
+how the ASP code handles the different formats, GetFormValue solves that one.
+
+=head2 Installation instructions
+
+Download the file. If you get it from my geocities web site you will have
+to rename it (they don't like .pm extensions). Make sure the file is called
+ASP.pm
+
+Now move the file into the perl\site\<version>\lib\win32 directory (where
+<version> is your perl version).
+
+That's it - you're ready to start PerlScripting with ease.
+
+=head1 Function Reference
 
 =over 4
 
@@ -172,11 +199,11 @@ NB: C<print> calls Print, so you could use either, but print is more integrated
 with "the perl way".
 
 =cut
-sub Print (@) {
+sub Print(@) {
 	my ($output);
 	foreach $output (@_) {
 		if (length($output) > 128000) {
-			Print (unpack('a128000a*', $output));
+			Print(unpack('a128000a*', $output));
 		}
 		else {$main::Response->Write($output);}
 	}
@@ -397,8 +424,8 @@ Example:
 
 =cut
 
+use Win32::OLE::Variant;
 sub BinaryWrite (@) {
-	require Win32::OLE::Variant;
 	my ($output);
 	foreach $output (@_) {
 		if (length($output) > 128000) {
@@ -497,23 +524,3 @@ sub SetCookie ($$;%) {
 		($hash{-expires} ? "; expires=" . &date(&expire_calc($hash{-expires})) : "") );
 }
 
-# print overloading
-
-package Win32::ASP::IO;
-
-sub new {
-    my $self = bless {}, shift;
-    $self;
-}
-
-sub print {
-    my $self = shift;
-    Win32::ASP::Print(@_);
-    1;
-}
-
-sub TIEHANDLE { shift->new(@_) }
-sub PRINT     { shift->print(@_) }
-sub PRINTF    { shift->print(sprintf(@_)) }
-
-1;

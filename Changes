@@ -1,10 +1,12 @@
 Revision history for Perl extension Win32::ASP.
 
-
+2.0   Tue Jan 12 1999
+	- Made into an Autoloading module to increase speed.
+	
 1.11  Sun Jan 10 1999
 	- Forgot to document changes in 1.10 (sorry)
 	- Added HTMLEncode as requested
-	- Speedup by only requiring Win32::OLE::Variant at the last minute`
+	- Speedup by only requiring Win32::OLE::Variant at the last minute
 
 1.9   Fri Oct 23 11:38:00 1998
 	- Well, it was always 1.9 - I just never had the proper structure
