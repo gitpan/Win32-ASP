@@ -3,8 +3,8 @@
 # Win32::ASP - a Module for ASP (PerlScript) Programming
 #
 # Author: Matt Sergeant
-# Revision: 1.9
-# Last Change: Added SetCookie
+# Revision: 1.10
+# Last Change: Added SetCookie (version bumbed to 1.10 for CPAN)
 #####################################################################
 # Copyright 1998 Matt Sergeant.  All rights reserved.
 #
@@ -123,7 +123,7 @@ BEGIN {
 
 }
 
-$Win32::ASP::VERSION='1.9';
+$Win32::ASP::VERSION='1.10';
 
 my $SH = tie *RESPONSE_FH, 'Win32::ASP::IO';
 select RESPONSE_FH;
