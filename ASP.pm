@@ -25,8 +25,9 @@ use Win32::OLE::Variant;
 
 sub new {
     my $self = bless {}, shift;
-	$self->{input_data} = Win32::OLE::Variant->new( VT_UI1, $Request->BinaryRead(
-			 $Request->{TotalBytes} ) )->Value;
+	my $request = shift;
+	$self->{input_data} = Win32::OLE::Variant->new( VT_UI1, $request->BinaryRead(
+			 $request->{TotalBytes} ) )->Value;
 	$self->{current_pos} = 0;
     $self;
 }
@@ -43,7 +44,7 @@ sub PRINTF    { shift->print(sprintf(@_)) }
 
 sub READ      {
 	my $self = shift;
-	my $$bufref = \$_[0];
+	my $bufref; $$bufref = \$_[0];
 	my (undef, $len, $offset) = @_;
 	if (defined $offset) {
 		$self->{current_pos} = $offset;
@@ -126,12 +127,12 @@ BEGIN {
 
 }
 
-$VERSION='2.11';
+$VERSION='2.12';
 
 tie *RESPONSE_FH, 'Win32::ASP::IO';
 select RESPONSE_FH;
 close STDIN;
-tie *STDIN, 'Win32::ASP::IO';
+tie *STDIN, 'Win32::ASP::IO', $Request;
 
 # Preloaded methods go here.
 
