@@ -9,7 +9,7 @@ WriteMakefile(
 		'SUFFIX' => '.gz',
 		'PREOP' => 'perl -MPod::Text -e "pod2text q(ASP.pm)" > README',
 		},
-	'AUTHOR' => 'Matt Sergeant',
+	'AUTHOR' => 'Matt Sergeant and Bill Odom',
 	'ABSTRACT' => 'Utility Functions for ASP Programming',
 	'BINARY_LOCATION' => 'Win32-ASP.tar.gz',
 );
