@@ -126,7 +126,7 @@ BEGIN {
 
 }
 
-$VERSION='2.10';
+$VERSION='2.11';
 
 tie *RESPONSE_FH, 'Win32::ASP::IO';
 select RESPONSE_FH;
@@ -301,7 +301,7 @@ sub HTMLEncode (@) {
 	my (@encodedHTML,$output) = (@_);
 	my $ref = 0;
 	if (ref $encodedHTML[0] eq "ARRAY") {
-		\@encodedHTML = $encodedHTML[0];
+		@encodedHTML = @{$encodedHTML[0]};
 		$ref++;
 	}
 	foreach $output (@encodedHTML) {
