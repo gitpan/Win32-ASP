@@ -1,5 +1,10 @@
 Revision history for Perl extension Win32::ASP.
 
+2.10  Wed Feb 2 2000 (Groundhog day, apparently!)
+	- Removed tests
+	- Added experimental STDIN support
+	- Added param() to @EXPORT
+
 2.02  Tue Jun 1 1999
 	- Fixed Tests
 	- Added param() as alias for GetFormValue()

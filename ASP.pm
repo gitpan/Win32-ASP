@@ -3,7 +3,7 @@
 # Win32::ASP - a Module for ASP (PerlScript) Programming
 #
 # Author: Matt Sergeant
-# Revision: 2.01
+# Revision: 2.10
 # Last Change: Fixed install docs, fixed DeathHooks
 #####################################################################
 # Copyright 1998 Matt Sergeant.  All rights reserved.
@@ -21,8 +21,13 @@ use strict;
 
 package Win32::ASP::IO;
 
+use Win32::OLE::Variant;
+
 sub new {
     my $self = bless {}, shift;
+	$self->{input_data} = Win32::OLE::Variant->new( VT_UI1, $Request->BinaryRead(
+			 $Request->{TotalBytes} ) )->Value;
+	$self->{current_pos} = 0;
     $self;
 }
 
@@ -35,6 +40,31 @@ sub print {
 sub TIEHANDLE { shift->new(@_) }
 sub PRINT     { shift->print(@_) }
 sub PRINTF    { shift->print(sprintf(@_)) }
+
+sub READ      {
+	my $self = shift;
+	my $$bufref = \$_[0];
+	my (undef, $len, $offset) = @_;
+	if (defined $offset) {
+		$self->{current_pos} = $offset;
+	}
+	my $string = substr($self->{input_data}, $self->{current_pos}, $len);
+	$self->{current_pos} += $len;
+	$$bufref = $string;
+	return length($string);
+}
+	
+sub READLINE  {
+	my $self = shift;
+	my $string;
+	while (my $char = $self->GETC) {
+		$string .= $char;
+		last if $char eq "\015";
+	}
+	return $string;
+}
+
+sub GETC      { my $char; return undef unless shift->READ($char, 1); return $char; }
 
 1;
 
@@ -62,6 +92,7 @@ BEGIN {
 						exit
 						GetFormValue
 						GetFormCount
+						param
 					);
 	%EXPORT_TAGS =	( 'strict' => [qw(
 						Print
@@ -95,10 +126,12 @@ BEGIN {
 
 }
 
-$VERSION='2.02';
+$VERSION='2.10';
 
-my $SH = tie *RESPONSE_FH, 'Win32::ASP::IO';
+tie *RESPONSE_FH, 'Win32::ASP::IO';
 select RESPONSE_FH;
+close STDIN;
+tie *STDIN, 'Win32::ASP::IO';
 
 # Preloaded methods go here.
 
@@ -150,30 +183,14 @@ how the ASP code handles the different formats, GetFormValue solves that one.
 
 =head2 Installation instructions
 
-This now installs with MakeMaker, or I often have a ppd package available
-at http://www.fastnetltd.ndirect.co.uk/Perl/zips
+Usually ActiveState are pretty "on the ball" with CPAN archives, so it should
+just be a matter of typing:
 
-To install the ppd, extract the zip file somewhere, and in a dos box cd to
-that directory and type "ppm install Win32-ASP.ppd".
+ ppm install Win32-ASP
 
-To install via MakeMaker, it's the usual procedure - download from CPAN,
-extract, type "perl Makefile.PL", "nmake" then "nmake install". Don't
-do an "nmake test" because the ASP objects won't be available and so won't
-work properly.
+on the command line. Make sure you're connected to the internet first.
 
 =head1 Function Reference
-
-=head2 use Win32::ASP qw(:strict);
-
-This allows you to use the ASP module in a "strict" perl script. Normally under "use strict"
-PerlScript would complain that the ASP objects ($Response, $Session etc) were not
-initialised: "Global symbol "Response" requires explicit package name at - line XXX".
-
-To get around this I simply assign and assign back the variables, and export them into
-the main namespace.
-
-Note - you don't _have_ to do this. The symbols for Session, Response etc are in the global
-symbol table and so are accessible if you do "use vars qw/$Session $Response/;".
 
 =head2 Print LIST
 
@@ -429,7 +446,7 @@ END {
 
 =head2 BinaryWrite LIST
 
-Performs the same function as C<$Response->E<gt>C<BinaryWrite()> but gets around
+Performs the same function as C<$Response-E<gt>>C<BinaryWrite()> but gets around
 Perl's lack of unicode support, and the null padding it uses to get around
 this.
 
@@ -536,10 +553,22 @@ Example:
 
 sub SetCookie ($$;%) {
 	my ($name, $value, %hash) = @_;
-	$value = join("&", map {$main::Server->URLEncode($_) . "=" . $main::Server->URLEncode($$value{$_})} keys(%$value)) if (ref($value) eq 'HASH');
+	$value = join("\&", map {$main::Server->URLEncode($_) . "=" . $main::Server->URLEncode($$value{$_})} keys(%$value)) if (ref($value) eq 'HASH');
 	$main::Response->AddHeader('Set-Cookie', "$name=$value" .
 		($hash{-path} ? "; path=" . $hash{-path} : "") .
 		($hash{-domain} ? "; domain=" . $hash{-domain} : "") .
 		($hash{-secure} ? "; secure" : "") .
 		($hash{-expires} ? "; expires=" . &date(&expire_calc($hash{-expires})) : "") );
 }
+
+=head1 Experimental STDIN support
+
+Version 2.10 adds experimental support for STDIN processing. You should
+be able to go C<while(<STDIN>) {...}> now. However, I don't have an NT
+machine to test this on (I dumped NT in favour of Linux a while back),
+so it's caveat emptor - and feed me with bug reports if you want it
+to work. The idea is that now CGI.pm should be able to read form data
+and file uploads appropriately. If it works, let me know. If it doesn't,
+let me know too :)
+
+=cut
