@@ -120,6 +120,20 @@ Function Reference
         automatically for you, and any cleanup code added with
         `AddDeathHook' is also called.
 
+    HTMLEncode LIST
+        The same as HTMLPrint except the output is not printed but
+        returned as a scalar instead. HTMLEncode is not exported, so
+        use it like Win32::ASP::HTMLEncode.
+
+        This function is useful to handle output that comes from a
+        database or a file, where you don't have total control over
+        the input.
+
+        If an array ref is passed it uses the ref, otherwise it
+        assumes an array of scalars is used. Using a ref makes for
+        less time spent passing values back and forth, and is the
+        prefered method.
+
     GetFormValue EXPR [, EXPR]
         returns the value passed from a form (or non-form GET
         request). Use this method if you want to be able to develop

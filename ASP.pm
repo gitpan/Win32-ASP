@@ -3,8 +3,8 @@
 # Win32::ASP - a Module for ASP (PerlScript) Programming
 #
 # Author: Matt Sergeant
-# Revision: 1.10
-# Last Change: Added SetCookie (version bumbed to 1.10 for CPAN)
+# Revision: 1.11
+# Last Change: Added HTMLEncode from Jeroen Kustermans
 #####################################################################
 # Copyright 1998 Matt Sergeant.  All rights reserved.
 #
@@ -123,7 +123,7 @@ BEGIN {
 
 }
 
-$Win32::ASP::VERSION='1.10';
+$Win32::ASP::VERSION='1.11';
 
 my $SH = tie *RESPONSE_FH, 'Win32::ASP::IO';
 select RESPONSE_FH;
@@ -251,6 +251,33 @@ sub exit (;$) {
 	CORE::exit();
 }
 
+=item HTMLEncode LIST
+
+The same as HTMLPrint except the output is not printed but returned
+as a scalar instead.
+HTMLEncode is not exported, so use it like Win32::ASP::HTMLEncode.
+
+This function is useful to handle output that comes from a database
+or a file, where you don't have total control over the input.
+
+If an array ref is passed it uses the ref, otherwise it assumes an array of
+scalars is used. Using a ref makes for less time spent passing values back
+and forth, and is the prefered method.
+
+=cut
+sub HTMLEncode (@) {
+	my (@encodedHTML,$output) = (@_);
+	my $ref = 0;
+	if (ref $encodedHTML[0] eq "ARRAY") {
+		\@encodedHTML = $encodedHTML[0];
+		$ref++;
+	}
+	foreach $output (@encodedHTML) {
+		$output = $Server->HTMLEncode($output);
+	}
+	return $ref ? \@encodedHTML : @encodedHTML;
+}
+
 =item GetFormValue EXPR [, EXPR]
 
 returns the value passed from a form (or non-form GET request). Use this
@@ -370,9 +397,8 @@ Example:
 
 =cut
 
-use Win32::OLE::Variant;
-
 sub BinaryWrite (@) {
+	require Win32::OLE::Variant;
 	my ($output);
 	foreach $output (@_) {
 		if (length($output) > 128000) {
