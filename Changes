@@ -1,5 +1,10 @@
 Revision history for Perl extension Win32::ASP.
 
+2.02  Tue Jun 1 1999
+	- Fixed Tests
+	- Added param() as alias for GetFormValue()
+	- Added no-parameter version of GetFormValue (returns keys)
+
 2.01  Mon Feb 15 1999
 	- Fixed SetCookie Dictionaries
 	- Fixed DeathHooks

@@ -141,7 +141,19 @@ Function Reference
 
             my @AllQs = GetFormValue('Q');
 
-    will return an array: @AllQs = ['a', 'b']
+    will return an array: @AllQs = ('a', 'b')
+
+    Also just added: If you call GetFormValue without any parameters
+    it will return a list of Form parameters in the same way that
+    CGI.pm's param() function does. This allows easy iteration over
+    the form elements:
+
+            foreach my $key (GetFormValue()) {
+                    print "$key = ", GetFormValue($key), "<br>\n";
+            }
+
+    Also added a param() function which works exactly as
+    GetFormValue does, for compatibility with CGI.pm.
 
   GetFormCount EXPR
 

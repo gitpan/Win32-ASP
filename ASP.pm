@@ -95,7 +95,7 @@ BEGIN {
 
 }
 
-$VERSION='2.01';
+$VERSION='2.02';
 
 my $SH = tie *RESPONSE_FH, 'Win32::ASP::IO';
 select RESPONSE_FH;
@@ -187,11 +187,11 @@ NB: C<print> calls Print, so you could use either, but print is more integrated
 with "the perl way".
 
 =cut
-sub Print(@) {
+sub Print {
 	my ($output);
 	foreach $output (@_) {
 		if (length($output) > 128000) {
-			Print(unpack('a128000a*', $output));
+			Win32::ASP::Print(unpack('a128000a*', $output));
 		}
 		else {$main::Response->Write($output);}
 	}
@@ -310,10 +310,31 @@ for a particular parameter. For example with the above url:
 
 	my @AllQs = GetFormValue('Q');
 
-will return an array: @AllQs = ['a', 'b']
+will return an array: @AllQs = ('a', 'b')
+
+Also just added: If you call GetFormValue without any parameters it will
+return a list of Form parameters in the same way that CGI.pm's param()
+function does. This allows easy iteration over the form elements:
+
+	foreach my $key (GetFormValue()) {
+		print "$key = ", GetFormValue($key), "<br>\n";
+	}
+
+Also added a param() function which works exactly as GetFormValue does,
+for compatibility with CGI.pm.
 
 =cut
-sub GetFormValue ($;$) {
+sub GetFormValue (;$$) {
+	unless (@_) {
+		my @keys;
+		for my $f (Win32::OLE::in ($Request->QueryString)) {
+			push @keys, $f;
+		}
+		for my $f (Win32::OLE::in ($Request->Form)) {
+			push @keys, $f;
+		}
+		return @keys;
+	}
 	$_[1] = 1 unless defined $_[1];
 	if (!wantarray) {
 		if ($main::Request->ServerVariables('REQUEST_METHOD')->Item eq 'GET') {
@@ -339,6 +360,10 @@ sub GetFormValue ($;$) {
 		}
 		return @ret;
 	}
+}
+
+sub param {
+	GetFormValue(@_);
 }
 
 =head2 GetFormCount EXPR

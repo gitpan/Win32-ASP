@@ -4,8 +4,11 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'	=> 'Win32::ASP',
     'VERSION_FROM' => 'ASP.pm', # finds $VERSION
-	'dist' => { 'COMPRESS' => 'gzip', 'SUFFIX' => '.gz' },
-	'EXE_FILES' => ['PerlSE.pl'],
+	'dist' => {
+		'COMPRESS' => 'gzip',
+		'SUFFIX' => '.gz',
+		'PREOP' => 'perl -MPod::Text -e "pod2text q(ASP.pm)" > README',
+		},
 	'AUTHOR' => 'Matt Sergeant',
 	'ABSTRACT' => 'Utility Functions for ASP Programming',
 	'BINARY_LOCATION' => 'Win32-ASP.tar.gz',
